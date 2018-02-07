@@ -17,7 +17,7 @@ for i in range(100):
 		w = w + lr*(eout-fout).dot(data)
 		print(w)
 
-#画出眼本和曲线
+#画出样本和曲线
 x = np.linspace(0, 5)
 y = -(w[1]/w[2])*x-w[0]/w[2]
 plt.figure()
