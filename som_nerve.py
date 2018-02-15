@@ -26,21 +26,25 @@ def get_winners(win, scope, r):
                         if l<r:
                                 res.append([i, j])
         return res
-data = np.array([[5, 5],[1.3, 1.5], [6, 6], [5, 6], [6, 5], [1, 1], [2, 2], [1, 2], [2, 1]])
+data = np.array([[5, 5],[1.3, 1.5], [6, 6], [5, 6], [6, 5], [1, 1], [2, 2], [1, 2], [2, 1], [-1, 10], [-1, 10.2], [-1.5, 10.5], [-1.8, 11]])
 lrate = 0.9
 radius = 3
-epchos = 2000
+epchos = 1000
 
 data1 = deal_data(data)
-w = np.array(random.sample(data1, 3)).reshape(3, 1, data1.shape[1])
+#w = np.array(random.sample(data1, 3)).reshape(3, 1, data1.shape[1])
+w = np.random.random((2, 2, 2))
 data1 = norm2(data1)
 w = norm_w(w)
 for i in range(1, epchos+1):
         index = np.random.randint(data1.shape[0])
         d = data1[index]
-        o = np.array([np.atleast_2d(d).dot(j.T) for j in w]).reshape(w.shape[0], w.shape[1])#向量点积3X1
-        winxy = o.argmax()%o.shape[0], o.argmax()%o.shape[1]
+        d2 = np.atleast_2d(d)#1X2
+        o = np.array([j.dot(d2.T) for j in w])#向量点积3X1
+        winarea = np.where(o==o.max())
+        winxy = winarea[0][0], winarea[1][0], winarea[2][0], 
         winners = get_winners(winxy, o.shape, radius)
+        
         #获胜邻域调整权值
         for j in winners:
                 w[j[0]][j[1]] = w[j[0]][j[1]] + lrate*(d-w[j[0]][j[1]])
@@ -50,13 +54,18 @@ for i in range(1, epchos+1):
 
         #改变学习率
         lrate = 0.9*(1-i/(epchos+1.))
-        #print(o, lrate, radius)
         #if lrate<0.001:
         #        print('counts:', i)
         #        break
+res = []
+for i in data1:
+        r = np.array([j.dot(i.T) for j in w])
+        res.append(r)
+res = np.array(res)
+print(res,res.shape)
 
-res = np.array([data1.dot(k.T) for k in w]).reshape((data1.shape[0], w.shape[0]))
-ws = np.argmax(res, axis=1).tolist()
+ws = [i.argmax() for i in res]
+print(ws)
 colors = ['y', 'r', 'b', 'g']
 for i in range(data.shape[0]):
         plt.plot(data[i][0], data[i][1], colors[ws[i]]+'o')
