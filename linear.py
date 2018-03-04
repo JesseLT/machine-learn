@@ -15,8 +15,7 @@ for i in range(1000):
 	fout = data.dot(w.T).T # 激活函数为y = x
 	if (np.abs(eout-fout)<0.000001).all():#期望输出与实际输出误差小于0.0001时模型收敛
 		print('Counts:', i)
-		print(fout)
-                print(lr)
+		print(fout, lr)
 		break
 	else:
 		w = w + lr*(eout-fout).dot(data)
@@ -42,5 +41,6 @@ plt.plot(x, fx1, 'r')
 plt.plot(x, fx2, 'r')
 plt.plot(x1, y1, 'yo')
 plt.plot(x2, y2, 'bo')
+#plt.ion()
 plt.show()
 
