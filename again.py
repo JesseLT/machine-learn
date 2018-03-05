@@ -1,62 +1,48 @@
 #!/usr/bin/python
 # coding:utf-8
 
+import tensorflow as tf
 import numpy as np
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
-def deal_data(x):
-        mid = (x.max()+x.min())/2
-        mea = (x.max()-x.min())/2
-        return np.array([(i-mid)/mea for i in x])
+def add_layer(inputs, in_size, out_size, act_func=lambda x:x):
+        W = tf.Variable(tf.random_uniform([in_size, out_size]))
+        b = tf.Variable(tf.zeros([1, out_size])+0.1)
+        outputs = tf.matmul(inputs, W) +b
+        return act_func(outputs)
 
-def norm2(x):
-        return np.array([i/np.sqrt(np.sum(i*i)) for i in x])
+x_data = np.linspace(-1, 1, 300)[:, np.newaxis]
+noise = np.random.normal(0, 0.04, x_data.shape)
+y_data = np.square(x_data) - 0.5 + noise
 
-def normw(x):
-        return np.array([norm2(i) for i in x])
+xs = tf.placeholder(tf.float32, [None, 1])
+ys = tf.placeholder(tf.float32, [None, 1])
+l1 = add_layer(xs, 1, 10, act_func=tf.nn.relu)
+o = add_layer(l1, 10, 1)
+loss = tf.reduce_mean(tf.reduce_sum(tf.square(ys-o), 1))
+train = tf.train.GradientDescentOptimizer(0.1).minimize(loss)
 
-def get_winners(winxy, scope, r):
-        l = list()
-        for i in range(scope[0]):
-                for j in range(scope[1]):
-                        dist = np.sqrt((winxy[0]-i)**2+(winxy[1]-j)**2)
-                        if dist<r:
-                                l.append([i, j])
-        return l
+init = tf.global_variables_initializer()
+sess = tf.Session()
+sess.run(init)
 
-data = np.array([[5, 5],[1.3, 1.5], [6, 6], [5, 6], [6, 5], [1, 1], [2, 2], [1, 2], [2, 1], [-1, 10], [-1, 10.2], [-1.5, 10.5], [-1.8, 11]])
-w = np.random.random((2, 2, data.shape[1]))
-lrate = 0.9
-radius = 3
-epochs = 1000
-
-data1 = deal_data(data)
-data2 = norm2(data1)
-w = normw(w)
-
-for i in range(epochs):
-        rindex = np.random.randint(data2.shape[0])
-        d = data2[rindex]
-        d2 = np.atleast_2d(d)
-
-        o = np.array([j.dot(d2.T) for j in w])#(2, 2, 1)
-        win_arr = np.where(o==o.max())
-        winxy = win_arr[0][0], win_arr[1][0], win_arr[2][0]
-        winners = get_winners(winxy, w.shape, radius)
-
-        for m in winners:
-                w[m[0]][m[1]] = w[m[0]][m[1]] + lrate*(d-w[m[0]][m[1]])
-
-        lrate = 0.9*(1-i/(epochs+0.))
-        radius = 3*(1-i/(epochs+0.))
-
-colors = ['ro', 'bo', 'yo', 'go']
-result = list()
-for i in data1:
-        r = np.array([j.dot(i.T) for j in w])
-        result.append(r)
-am = [i.argmax() for i in result]
-print(am)
-for i in range(data.shape[0]):
-        plt.plot(data[i][0], data[i][1], colors[am[i]])
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1)#将画布分成1行1列的图，选中第一个！
+ax.scatter(x_data, y_data)#scatter散点图
+plt.ion()#使程序不会暂停
 plt.show()
+for i in range(1200):
+        sess.run(train, feed_dict={xs:x_data, ys:y_data})
+        if i%25==0:
+                print(sess.run(loss, feed_dict={xs:x_data, ys:y_data}))
+                try:
+                        ax.lines.remove(lines[0])
+                except Exception:
+                        pass
+                p = sess.run(o, feed_dict={xs:x_data})
+                lines = ax.plot(x_data, p, 'r-', lw=5)
+                plt.pause(0.1)
+sess.close()
+'''
+add_subplot相比subplot,更具有面向对象性,可以对每个图片的对象进行操作！
+'''
